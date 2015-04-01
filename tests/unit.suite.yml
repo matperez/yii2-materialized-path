@@ -1,0 +1,10 @@
+class_name: UnitTester
+modules:
+    enabled: [UnitHelper, Db]
+coverage:
+    enabled: true
+    include:
+        - src/*
+    exclude:
+        - src/migrations/*
+

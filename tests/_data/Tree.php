@@ -1,21 +1,24 @@
 <?php
 
-namespace matperez\mp\models;
+namespace data;
 
+use matperez\mp\components\MaterializedPathBehavior;
+use matperez\mp\components\MaterializedPathTrait;
 use Yii;
+use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "tree".
  *
  * @property integer $id
- * @property string $name
+ * @property string $label
  * @property string $path
  * @property integer $position
  * @property integer $level
  */
-class Tree extends \yii\db\ActiveRecord
+class Tree extends ActiveRecord
 {
-    use \matperez\mp\components\MaterializedPathTrait;
+    use MaterializedPathTrait;
 
     /**
      * @inheritdoc
@@ -28,12 +31,24 @@ class Tree extends \yii\db\ActiveRecord
     /**
      * @inheritdoc
      */
+    public function behaviors()
+    {
+        return [
+            [
+                'class' => MaterializedPathBehavior::className(),
+            ],
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function rules()
     {
         return [
-            [['name'], 'required'],
+            [['label'], 'required'],
             [['position', 'level'], 'integer'],
-            [['name', 'path'], 'string', 'max' => 255]
+            [['label', 'path'], 'string', 'max' => 255]
         ];
     }
 
@@ -44,11 +59,10 @@ class Tree extends \yii\db\ActiveRecord
     {
         return [
             'id' => 'ID',
-            'name' => 'Name',
+            'label' => 'Name',
             'path' => 'Path',
             'position' => 'Position',
             'level' => 'Level',
         ];
     }
-
 }
