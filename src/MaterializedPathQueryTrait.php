@@ -6,7 +6,7 @@
  * Time: 19:20
  */
 
-namespace matperez\mp\components;
+namespace matperez\mp;
 
 use yii\db\ActiveQuery;
 

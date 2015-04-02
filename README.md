@@ -1,10 +1,26 @@
 # Materialized Path for Yii 2
 
 Materialized Path Tree trait for Yii2 ActiveRecord.
+Warning: it's still in beta! 
 
 ## Installation
 
-git clone && use. composer is not available. 
+The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
+
+Either run
+
+```bash
+$ composer require matperez/yii2-materialized-path
+```
+
+or add
+
+```
+"matperez/yii2-materialized-path": "*"
+```
+
+to the `require` section of your `composer.json` file.
+
 
 ## Migrations
 
@@ -29,29 +45,27 @@ $this->createTable('tree', [
 
 ## Configuring
 
-There are no configurable parameters. Attach trait to your model and use it. 
+Configure model as follow:
 
 ```php
-/**
- * This is the model class for table "tree".
- *
- * @property integer $id
- * @property string $name
- * @property string $path
- * @property integer $position
- * @property integer $level
- */
+
+use matperez\mp\MaterializedPathBehavior;
+use matperez\mp\MaterializedPathQuery;
+
 class Tree extends \yii\db\ActiveRecord
 {
-    use \matperez\mp\components\MaterializedPathTrait;
-
     /**
      * @inheritdoc
      */
-    public static function tableName()
+    public function behaviors()
     {
-        return 'tree';
+        return [
+            [
+                'class' => MaterializedPathBehavior::className(),
+            ],
+        ];
     }
+
 
     /**
      * @inheritdoc
@@ -59,24 +73,18 @@ class Tree extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['name'], 'required'],
             [['position', 'level'], 'integer'],
-            [['name', 'path'], 'string', 'max' => 255]
+            [['path'], 'string', 'max' => 255]
         ];
     }
 
     /**
-     * @inheritdoc
+     * Query factory
+     * @return MaterializedPathQuery
      */
-    public function attributeLabels()
+    public static function find()
     {
-        return [
-            'id' => 'ID',
-            'name' => 'Name',
-            'path' => 'Path',
-            'position' => 'Position',
-            'level' => 'Level',
-        ];
+        return new MaterializedPathQuery(get_called_class());
     }
 
 }
@@ -105,7 +113,7 @@ To prepend a node as the first child of another node
 
 ```php
 $child = new Tree(['name' => 'child']);
-$russia->appendTo($root);
+$root->appendTo($root);
 ```
 
 The tree will look like this
@@ -162,6 +170,13 @@ $node = Tree::findOne(['name' => 'child']);
 $parent = $node->parent();
 ```
 
+### Delete node with children
+
+To delete node with children
+```php
+$node->delete();
+```
+
 ### Todo
 
-composer, tests
+more tests, mode examples

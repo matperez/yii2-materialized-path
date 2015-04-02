@@ -2,8 +2,8 @@
 
 namespace data;
 
-use matperez\mp\components\MaterializedPathBehavior;
-use matperez\mp\components\MaterializedPathTrait;
+use matperez\mp\MaterializedPathBehavior;
+use matperez\mp\MaterializedPathQuery;
 use Yii;
 use yii\db\ActiveRecord;
 
@@ -18,7 +18,6 @@ use yii\db\ActiveRecord;
  */
 class Tree extends ActiveRecord
 {
-    use MaterializedPathTrait;
 
     /**
      * @inheritdoc
@@ -65,4 +64,15 @@ class Tree extends ActiveRecord
             'level' => 'Level',
         ];
     }
+
+
+    /**
+     * Query factory
+     * @return MaterializedPathQuery
+     */
+    public static function find()
+    {
+        return new MaterializedPathQuery(get_called_class());
+    }
+
 }

@@ -26,5 +26,5 @@ phpunit.phar
 # local phpunit config
 /phpunit.xml
 
-tests/_output/*
+tests/_output
 tests/unit/UnitTester.php

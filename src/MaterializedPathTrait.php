@@ -6,7 +6,7 @@
  * Time: 19:44
  */
 
-namespace matperez\mp\components;
+namespace matperez\mp;
 
 
 use yii\db\ActiveQuery;
@@ -14,7 +14,8 @@ use yii\db\ActiveRecord;
 
 /**
  * Class MaterializedPathTrait
- * @package matperez\mp\components
+ * @property ActiveRecord|MaterializedPathTrait[] $children
+ * @package matperez\mp
  */
 trait MaterializedPathTrait
 {
@@ -45,28 +46,33 @@ trait MaterializedPathTrait
     }
 
     /**
-     * Move to parent node
+     * Append node as another node child
      * @see MaterializedPathBehavior::appendTo()
      * @param ActiveRecord $node
-     * @return ActiveRecord
+     * @param bool $runValidation
+     * @param array $attributes
+     * @return bool
      */
-    public function appendTo($node)
+    public function appendTo($node, $runValidation = true, $attributes = null)
     {
-        return parent::appendTo($node);
+        return parent::appendTo($node, $runValidation, $attributes);
     }
 
     /**
      * Make new root
-     * @param bool $new
-     * @return $this
+     * @see MaterializedPathBehavior::makeRoot()
+     * @param bool $runValidation
+     * @param array $attributes
+     * @return bool
      */
-    public function makeRoot($new = false)
+    public function makeRoot($runValidation = true, $attributes = null)
     {
-        return parent::makeRoot($new);
+        return parent::makeRoot($runValidation, $attributes);
     }
 
     /**
      * Set node position among siblings
+     * @see MaterializedPathBehavior::setPosition()
      * @param int|null $position
      * @return ActiveRecord|MaterializedPathTrait
      */
@@ -78,6 +84,7 @@ trait MaterializedPathTrait
 
     /**
      * Load whole tree at once
+     * @see MaterializedPathBehavior::loadTree()
      * @param ActiveQuery $query additional search criteria
      * @param bool $forceReload
      * @return $this

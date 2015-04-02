@@ -2,14 +2,14 @@
 /**
  * Created by PhpStorm.
  * User: andrey
- * Date: 01.04.15
- * Time: 10:56
+ * Date: 02.04.15
+ * Time: 22:50
  */
 
 namespace tests;
 
 
-class TestCase extends \yii\codeception\TestCase
+class DbTestCase extends \yii\codeception\DbTestCase
 {
     /**
      * @var string

@@ -1,13 +1,5 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: andrey
- * Date: 01.04.15
- * Time: 11:01
- */
-
-namespace matperez\mp\components;
-
+namespace matperez\mp;
 
 use yii\base\Behavior;
 use yii\db\ActiveQuery;
@@ -21,7 +13,7 @@ use yii\db\Expression;
 class MaterializedPathBehavior extends Behavior
 {
     /**
-     * @var int
+     * @var int maximum nesting level. limited by path field length
      */
     public $maxLevel = 32;
 
@@ -49,6 +41,33 @@ class MaterializedPathBehavior extends Behavior
      * @var bool
      */
     private $_treeIsLoaded = false;
+
+    /**
+     * @var string
+     */
+    protected $operation;
+
+    /**
+     * @inheritdoc
+     */
+    public function events()
+    {
+        return [
+//            ActiveRecord::EVENT_BEFORE_INSERT => 'beforeInsert',
+//            ActiveRecord::EVENT_AFTER_INSERT => 'afterInsert',
+//            ActiveRecord::EVENT_BEFORE_UPDATE => 'beforeUpdate',
+//            ActiveRecord::EVENT_AFTER_UPDATE => 'afterUpdate',
+//            ActiveRecord::EVENT_BEFORE_DELETE => 'beforeDelete',
+            ActiveRecord::EVENT_AFTER_DELETE => 'afterDelete',
+        ];
+    }
+
+    public function afterDelete()
+    {
+        /** @var ActiveRecord $owner */
+        $owner = $this->owner;
+        $owner->deleteAll(['like', 'path', '.'.$owner->primaryKey.'.']);
+    }
 
     /**
      * Check that node is a root
@@ -79,9 +98,11 @@ class MaterializedPathBehavior extends Behavior
     /**
      * Append node as another node child
      * @param ActiveRecord $node
-     * @return ActiveRecord
+     * @param bool $runValidation
+     * @param array $attributes
+     * @return bool
      */
-    public function appendTo($node) {
+    public function appendTo($node, $runValidation = true, $attributes = null) {
         /** @var ActiveRecord $owner */
         $owner = $this->owner;
         $this->setPosition(null);
@@ -95,20 +116,23 @@ class MaterializedPathBehavior extends Behavior
             $owner->{$this->positionAttribute} = count($node->getChildren()) + 1;
             $node->addChild($owner);
         }
-        $owner->save();
-        $this->_children = [];
-        foreach ($children as $child) {
-            $child->appendTo($owner);
+        if ($owner->save($runValidation, $attributes)) {
+            $this->_children = [];
+            foreach ($children as $child) {
+                $child->appendTo($owner);
+            }
+            return true;
         }
-        return $owner;
+        return false;
     }
 
     /**
      * Make new root
-     * @param bool $new
-     * @return ActiveRecord
+     * @param bool $runValidation
+     * @param array $attributes
+     * @return bool
      */
-    public function makeRoot($new = false)
+    public function makeRoot($runValidation = true, $attributes = null)
     {
         /** @var ActiveRecord $owner */
         $owner = $this->owner;
@@ -117,21 +141,30 @@ class MaterializedPathBehavior extends Behavior
         $owner->{$this->levelAttribute} = 0;
         $owner->{$this->pathAttribute} = '.';
         $rootsCount = $owner->find()->roots()->count();
-        $owner->{$this->positionAttribute} = $rootsCount ? $rootsCount + ($new ? 0 : 1) : 0;
-        $owner->save();
-        $this->_children = [];
-        foreach ($children as $child) {
-            $child->appendTo($this);
+        if ($rootsCount) {
+            $owner->{$this->positionAttribute} = $rootsCount;
+        } else {
+            $owner->{$this->positionAttribute} = 0;
         }
-        return $this;
+        if ($owner->save($runValidation, $attributes)) {
+            $this->_children = [];
+            foreach ($children as $child) {
+                $child->appendTo($owner);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
      * Set node position among siblings
      * @param int $position
+     * @param bool $runValidation
+     * @param array $attributes
      * @return ActiveRecord
+     * @throws \Exception
      */
-    public function setPosition($position = null) {
+    public function setPosition($position = null, $runValidation = true, $attributes = null) {
         /** @var ActiveRecord $owner */
         $owner = $this->owner;
         $path = $this->getParentId() ? $this->getParent()->{$this->pathAttribute} : '.' ;
@@ -147,7 +180,7 @@ class MaterializedPathBehavior extends Behavior
                     'position' => new Expression('position' . ($lower ? '+' : '-') . 1)
                 ]);
             $owner->{$this->positionAttribute} = $position;
-            $owner->update(true, ['position']);
+            $owner->update($runValidation, $attributes);
         } else {
             $owner->find()
                 ->andWhere(['like', 'path', $path])
@@ -234,7 +267,7 @@ class MaterializedPathBehavior extends Behavior
      * @param ActiveRecord $node
      */
     public function addDescendant($node) {
-        if ($this->isParentOf($node)) {
+        if ($this->isParentOf($node, true)) {
             $this->addChild($node);
         } else if ($child = $this->getChildParentOf($node)) {
             $child->addDescendant($node);
