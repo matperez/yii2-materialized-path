@@ -175,9 +175,9 @@ class MaterializedPathBehavior extends Behavior
             $owner->find()
                 ->andWhere(['like', 'path', $path])
                 ->andWhere(['level' => $owner->{$this->levelAttribute}])
-                ->andWhere(['between', 'position', min($posFrom, $posTo), max($posFrom, $posTo)])
+                ->andWhere(['between', $this->positionAttribute, min($posFrom, $posTo), max($posFrom, $posTo)])
                 ->createCommand()->update($owner->tableName(), [
-                    'position' => new Expression('position' . ($lower ? '+' : '-') . 1)
+                    $this->positionAttribute => new Expression($this->positionAttribute . ($lower ? '+' : '-') . 1)
                 ]);
             $owner->{$this->positionAttribute} = $position;
             $owner->update($runValidation, $attributes);
@@ -185,9 +185,9 @@ class MaterializedPathBehavior extends Behavior
             $owner->find()
                 ->andWhere(['like', 'path', $path])
                 ->andWhere(['level' => $owner->{$this->levelAttribute}])
-                ->andWhere(['>', 'position', $posFrom])
+                ->andWhere(['>', $this->positionAttribute, $posFrom])
                 ->createCommand()->update($owner->tableName(), [
-                    'position' => new Expression('position - 1')
+                    $this->positionAttribute => new Expression($this->positionAttribute.' - 1')
                 ]);
         }
         return $this;
@@ -213,7 +213,7 @@ class MaterializedPathBehavior extends Behavior
         } else {
             return $owner;
         }
-        $query->orderBy(['position' => SORT_ASC]);
+        $query->orderBy([$this->positionAttribute => SORT_ASC]);
         $items = $query->all();
         $levels = [];
         foreach($items as $item) {
