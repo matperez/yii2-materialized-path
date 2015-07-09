@@ -83,7 +83,7 @@ class MaterializedPathBehavior extends Behavior
      */
     public function hasChildren()
     {
-        return !!count($this->getChildren());
+        return (bool)count($this->getChildren());
     }
 
     /**
