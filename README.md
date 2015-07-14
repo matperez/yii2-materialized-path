@@ -1,7 +1,6 @@
 # Materialized Path for Yii 2
 
 Materialized Path Tree trait for Yii2 ActiveRecord.
-Warning: it's still in beta! 
 
 ## Installation
 
