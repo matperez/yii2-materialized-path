@@ -66,7 +66,7 @@ class MaterializedPathBehavior extends Behavior
     {
         /** @var ActiveRecord $owner */
         $owner = $this->owner;
-        $owner->deleteAll(['like', 'path', '.'.$owner->primaryKey.'.']);
+        $owner->deleteAll(['like', $this->pathAttribute , '.'.$owner->primaryKey.'.']);
     }
 
     /**
@@ -173,8 +173,8 @@ class MaterializedPathBehavior extends Behavior
             $posTo = (int) $position;
             $lower = $posTo < $posFrom;
             $owner->find()
-                ->andWhere(['like', 'path', $path])
-                ->andWhere(['level' => $owner->{$this->levelAttribute}])
+                ->andWhere(['like', $this->pathAttribute , $path])
+                ->andWhere(['like' => $owner->{$this->levelAttribute}])
                 ->andWhere(['between', $this->positionAttribute, min($posFrom, $posTo), max($posFrom, $posTo)])
                 ->createCommand()->update($owner->tableName(), [
                     $this->positionAttribute => new Expression($this->positionAttribute . ($lower ? '+' : '-') . 1)
@@ -183,8 +183,8 @@ class MaterializedPathBehavior extends Behavior
             $owner->update($runValidation, $attributes);
         } else {
             $owner->find()
-                ->andWhere(['like', 'path', $path])
-                ->andWhere(['level' => $owner->{$this->levelAttribute}])
+                ->andWhere([ $this->pathAttribute, $this->pathAttribute , $path])
+                ->andWhere([ $this->levelAttribute => $owner->{$this->levelAttribute}])
                 ->andWhere(['>', $this->positionAttribute, $posFrom])
                 ->createCommand()->update($owner->tableName(), [
                     $this->positionAttribute => new Expression($this->positionAttribute.' - 1')
