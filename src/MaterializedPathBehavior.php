@@ -174,7 +174,7 @@ class MaterializedPathBehavior extends Behavior
             $lower = $posTo < $posFrom;
             $owner->find()
                 ->andWhere(['like', $this->pathAttribute , $path])
-                ->andWhere([ $this->levelAttribute => $owner->{$this->levelAttribute}])
+                ->andWhere(['like' => $owner->{$this->levelAttribute}])
                 ->andWhere(['between', $this->positionAttribute, min($posFrom, $posTo), max($posFrom, $posTo)])
                 ->createCommand()->update($owner->tableName(), [
                     $this->positionAttribute => new Expression($this->positionAttribute . ($lower ? '+' : '-') . 1)
