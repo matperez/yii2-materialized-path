@@ -112,7 +112,7 @@ To prepend a node as the first child of another node
 
 ```php
 $child = new Tree(['name' => 'child']);
-$root->appendTo($root);
+$child->appendTo($root);
 ```
 
 The tree will look like this
