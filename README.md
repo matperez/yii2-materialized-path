@@ -176,6 +176,17 @@ To delete node with children
 $node->delete();
 ```
 
+## Testing
+
+```
+
+    ./vendor/bin/codeception build
+    ./vendor/bin/codeception run unit
+    
+
+``` 
+
+
 ### Todo
 
 more tests, mode examples
