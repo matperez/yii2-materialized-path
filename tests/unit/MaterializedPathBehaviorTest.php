@@ -17,7 +17,7 @@ use yii\helpers\ArrayHelper;
 
 /**
  * Class MaterializedPathBehaviorTest
- * @method Tree tree()
+ * @method Tree tree($name)
  * @package tests\unit
  */
 class MaterializedPathBehaviorTest extends DbTestCase
@@ -31,98 +31,142 @@ class MaterializedPathBehaviorTest extends DbTestCase
         ];
     }
 
-    public function testLoadTree()
+    /**
+     * @test
+     */
+    public function it_should_load_tree_at_once()
     {
+        /** @var Tree $root */
         $root = $this->tree('root_1');
-        $this->specify('it should load tree at once', function() use ($root) {
-            expect('root has children', $root->hasChildren())->true();
-            $children = $root->getChildren();
-            expect('root has two direct children', ArrayHelper::toArray($children))->equals([
-                2 => [
-                    'id' => 2,
-                    'label' => 'node 1.1',
-                    'path' => '.1.',
-                    'level' => 1,
-                    'position' => 1,
-                ],
-                3 => [
-                    'id' => 3,
-                    'label' => 'node 1.2',
-                    'path' => '.1.',
-                    'level' => 1,
-                    'position' => 2,
-                ],
-            ]);
-            expect('node 1.1 has one direct children', ArrayHelper::toArray($children[2]->getChildren()))->equals([
-                4 => [
-                    'id' => 4,
-                    'label' => 'node 1.1.1',
-                    'path' => '.1.2.',
-                    'level' => 2,
-                    'position' => 1,
-                ],
-            ]);
-        });
+        self::assertTrue($root->hasChildren(), 'root has children');
+
+        $children = $root->getChildren();
+
+        $firstLevelChildren = [
+            2 => [
+                'id' => 2,
+                'label' => 'node 1.1',
+                'path' => '.1.',
+                'level' => 1,
+                'position' => 1,
+            ],
+            3 => [
+                'id' => 3,
+                'label' => 'node 1.2',
+                'path' => '.1.',
+                'level' => 1,
+                'position' => 2,
+            ],
+        ];
+        self::assertEquals($firstLevelChildren, ArrayHelper::toArray($children), 'root has two direct children');
+
+        $secondLevelChildren = [
+            4 => [
+                'id' => 4,
+                'label' => 'node 1.1.1',
+                'path' => '.1.2.',
+                'level' => 2,
+                'position' => 1,
+            ],
+        ];
+        self::assertEquals($secondLevelChildren, ArrayHelper::toArray($children[2]->getChildren()), 'node 1.1 has one direct children');
     }
 
-    public function testConvertNodeToRoot()
+    /**
+     * @test
+     */
+    public function it_should_be_able_to_convert_existing_node_to_root()
     {
         $node = $this->tree('node_1_1');
-        $this->specify('it should be able to convert existing node into root', function() use ($node) {
-            expect('node is transformed into root', $node->makeRoot())->true();
-            expect('new root created', Tree::find()->roots()->count())->equals(2);
-            expect('node child got level up', ArrayHelper::toArray($node->getChildren()))->equals([
-                4 => [
-                    'id' => 4,
-                    'label' => 'node 1.1.1',
-                    'path' => '.2.',
-                    'level' => 1,
-                    'position' => 1,
-                ],
-            ]);
-        });
+        self::assertEquals(1, Tree::find()->roots()->count(), 'there is only one root for now');
+        self::assertTrue($node->makeRoot(), 'node is transformed to root');
+        self::assertEquals(2, Tree::find()->roots()->count(), 'new root has been created');
+
+        $childData = [
+            4 => [
+                'id' => 4,
+                'label' => 'node 1.1.1',
+                'path' => '.2.',
+                'level' => 1,
+                'position' => 1,
+            ],
+        ];
+        self::assertEquals($childData, ArrayHelper::toArray($node->getChildren()), 'node child got level up');
     }
 
-    public function testCreateNewRoot()
+    /**
+     * @test
+     */
+    public function it_should_create_new_root()
     {
         $root = new Tree(['label' => 'root 2']);
-
-        $this->specify('it should be able to create new root', function() use ($root) {
-            $rootCount = Tree::find()->roots()->count();
-            expect('new root created', $root->makeRoot())->true();
-            expect('new root appeared in the database', Tree::find()->roots()->count())->equals($rootCount+1);
-        });
+        $rootCount = Tree::find()->roots()->count();
+        expect('new root created', $root->makeRoot())->true();
+        expect('new root appeared in the database', Tree::find()->roots()->count())->equals($rootCount+1);
     }
 
-    public function testAppendTo()
+    /**
+     * @test
+     */
+    public function it_should_append_new_node_to_root()
     {
         $root = $this->tree('root_1');
-        $this->specify('it should be able to append new node to root', function() use ($root) {
-            $child = new Tree(['label' => 'child of root']);
-            expect('new node appended to root', $child->appendTo($root))->true();
-            expect('new node is a root child', $child->isChildOf($root))->true();
-            expect('root is a parent of new node', $root->isParentOf($child))->true();
-        });
+        $child = new Tree(['label' => 'child of root']);
+        expect('new node appended to root', $child->appendTo($root))->true();
+        expect('new node is a root child', $child->isChildOf($root))->true();
+        expect('root is a parent of new node', $root->isParentOf($child))->true();
+    }
 
+    /**
+     * @test
+     */
+    public function it_should_append_new_node_to_another_node()
+    {
+        $root = $this->tree('root_1');
         $node = $this->tree('node_1_2');
-        $this->specify('it should be able to append new node to another node', function() use ($root, $node) {
-            $child = new Tree(['label' => 'child of node']);
-            expect('new node appended to node', $child->appendTo($node))->true();
-            expect('new node is a old node child', $child->isChildOf($node))->true();
-            expect('root is one of a parents of a new node', $root->isParentOf($child))->true();
-            expect('root is not closest parent of a new node', $root->isParentOf($child, true))->false();
-            expect('old node is closest parent of a new node', $node->isParentOf($child, true))->true();
-        });
+        $child = new Tree(['label' => 'child of node']);
+        expect('new node appended to node', $child->appendTo($node))->true();
+        expect('new node is a old node child', $child->isChildOf($node))->true();
+        expect('root is one of a parents of a new node', $root->isParentOf($child))->true();
+        expect('root is not closest parent of a new node', $root->isParentOf($child, true))->false();
+        expect('old node is closest parent of a new node', $node->isParentOf($child, true))->true();
     }
 
-    public function testDelete()
+    /**
+     * @test
+     */
+    public function it_should_delete_nodes_with_their_children()
     {
         $root = $this->tree('root_1');
-        $this->specify('it should be able to delete nodes with their children', function() use ($root) {
-            expect('node is deleted', $root->delete())->equals(1);
-            expect('no nodes left in the database', Tree::find()->all())->isEmpty();
-        });
+        expect('node is deleted', $root->delete())->equals(1);
+        expect('no nodes left in the database', Tree::find()->all())->isEmpty();
     }
 
-
+    /**
+     * @test
+     */
+    public function i_can_create_adjusted_items_list()
+    {
+        $root = $this->tree('root_1');
+        $expected = [
+            1 => 'root 1',
+            2 => ' node 1.1',
+            3 => ' node 1.2',
+            4 => '  node 1.1.1',
+        ];
+        $items = [
+            $root->id => $root->label,
+        ];
+        foreach ($root->children as $child) {
+            $label = str_repeat(' ', $child->level).$child->label;
+            $items[$child->id] = $label;
+            if ($child->hasChildren()) {
+                foreach ($child->children as $subChild) {
+                    $label = str_repeat(' ', $subChild->level).$subChild->label;
+                    $items[$subChild->id] = $label;
+                }
+            }
+        }
+        self::assertEquals($expected, $items);
+    }
 }
